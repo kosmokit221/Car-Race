@@ -5,8 +5,10 @@ init()
 mixer.init()
 font.init()
 
+
 screen_info = display.Info()
 WIDTH, HEIGHT = screen_info.current_w, screen_info.current_h
+LINE_WIDTH = WIDTH/8
 flags = FULLSCREEN
 window = display.set_mode((WIDTH, HEIGHT), flags)
 display.set_caption("Race")
@@ -50,6 +52,24 @@ class GameSprite(sprite.Sprite):
         window.blit(self.image, self.rect)
 
 
+
+enemys = sprite.Group()
+
+class Enemy(GameSprite):
+    def __init__(self):
+        rand_line = randint(1,2)
+        x = WIDTH/2-LINE_WIDTH*rand_line
+        y = -150
+        super().__init__(enemy_img, 100, 150, x, y)   
+        self.speed = 5
+        enemys.add(self)
+        
+    def update(self):
+        self.rect.y += self.speed + player.bg_speed
+        if self.rect.y > HEIGHT:
+            self.kill()
+
+
 class Player(GameSprite):
     def __init__(self, sprite_image, width, height, x, y):
         super().__init__(sprite_image, width, height, x, y)   
@@ -58,6 +78,9 @@ class Player(GameSprite):
         self.bg_speed = 2
         self.max_speed = 20
         self.mask = mask.from_surface(self.image)
+        
+
+
                 
     def update(self):
         self.old_pos = self.rect.x, self.rect.y
@@ -78,14 +101,20 @@ class Player(GameSprite):
         # else:
         #     self.bg_speed = 2
         if keys[K_a] and self.rect.left > 0:
-        
+            self.image = transform.flip(self.original,True,False)
             self.rect.x -= self.speed
+
         if keys[K_d] and self.rect.right < WIDTH:
-        
+            self.image = self.original
             self.rect.x += self.speed
+        
+
+Enemy()
+last_spawn_time = time.get_ticks()
+spawn_interval = randint(1500, 4000)
 
 
-player = Player(player_img,90,160,300,300)
+player = Player(player_img,90,160,600,300)
 while True:
 #оброби подію «клік за кнопкою "Закрити вікно"»
     for e in event.get():
@@ -96,6 +125,11 @@ while True:
                 quit()
            
     if not finish:
+        now = time.get_ticks()
+        if now - last_spawn_time > spawn_interval:
+            Enemy()
+            last_spawn_time = time.get_ticks()
+            spawn_interval = randint(1500, 4000)
         sprites.update()
         window.blit(bg, (0,bg_y1))
         window.blit(bg, (0,bg_y2))
@@ -105,6 +139,7 @@ while True:
             bg_y1 = -HEIGHT
         if bg_y2 > HEIGHT:
             bg_y2 = -HEIGHT
+        
 
        
     sprites.draw(window)
