@@ -36,6 +36,7 @@ finish = False
 
 player_img = image.load('car1.png')
 enemy_img = image.load('car1_spr.png')
+enemy_car_img = image.load('car.png')
 
 sprites = sprite.Group()
 class GameSprite(sprite.Sprite):
@@ -70,12 +71,28 @@ class Enemy(GameSprite):
             self.kill()
 
 
+class Enemy2(GameSprite):
+    def __init__(self):
+        rand_line = randint(1,2)
+        x = WIDTH/2+LINE_WIDTH*rand_line - 100
+        y = -150
+        super().__init__(enemy_car_img, 100, 150, x, y)   
+        self.speed = 5
+        enemys.add(self)
+    
+    def update(self):
+        self.rect.y -= self.speed - player.bg_speed
+        if self.rect.bottom < 0:
+            self.kill()
+
+
 class Player(GameSprite):
     def __init__(self, sprite_image, width, height, x, y):
         super().__init__(sprite_image, width, height, x, y)   
         self.points = 0
         self.speed = 5
         self.bg_speed = 2
+        self.hp = 1
         self.max_speed = 20
         self.mask = mask.from_surface(self.image)
         
@@ -84,6 +101,7 @@ class Player(GameSprite):
                 
     def update(self):
         self.old_pos = self.rect.x, self.rect.y
+
 
         keys = key.get_pressed()
         if keys[K_w] and self.rect.y > 0:
@@ -109,12 +127,24 @@ class Player(GameSprite):
             self.rect.x += self.speed
         
 
+
 Enemy()
 last_spawn_time = time.get_ticks()
 spawn_interval = randint(1500, 4000)
 
+Enemy2()
+last_spawn_time = time.get_ticks()
+spawn_interval = randint(1500, 4000)
 
 player = Player(player_img,90,160,600,300)
+
+finish_text = font2.render("GAME OVER", True, (255,0,0))
+points_text = font1.render(f"score:{player.points}",True, (255,255,0))
+max_points = 0
+hp_text = font1.render(f"Hp:{player.hp}",True, (255,255,0))
+max_points_text = font1.render(f"Max score: {max_points}", True , (255,255,255))
+
+
 while True:
 #оброби подію «клік за кнопкою "Закрити вікно"»
     for e in event.get():
@@ -130,7 +160,23 @@ while True:
             Enemy()
             last_spawn_time = time.get_ticks()
             spawn_interval = randint(1500, 4000)
+            Enemy2()
+            last_spawn_time = time.get_ticks()
+            spawn_interval = randint(1500, 4000)
         sprites.update()
+        player.points += player.bg_speed/100
+        if player.rect.right<WIDTH/2:
+            player.points += 0.5
+        points_text = font1.render(f"score:{int(player.points)}",True, (255,255,0))
+
+        collide_list = sprite.spritecollide(player, enemys, False, sprite.collide_mask)
+
+        for enemy in collide_list:
+            player.hp = 0
+
+        if player.hp <= 0:
+            finish = True
+
         window.blit(bg, (0,bg_y1))
         window.blit(bg, (0,bg_y2))
         bg_y1+=player.bg_speed
@@ -143,5 +189,9 @@ while True:
 
        
     sprites.draw(window)
+    window.blit(points_text,(WIDTH-150,10))
+    if finish:
+        window.blit(finish_text,(WIDTH/2-100,HEIGHT/2))
+
     display.update()
     clock.tick(FPS)
