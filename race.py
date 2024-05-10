@@ -14,8 +14,8 @@ window = display.set_mode((WIDTH, HEIGHT), flags)
 display.set_caption("Race")
 FPS = 60
 
-font1 = font.SysFont("Impact", 35)
-font2 = font.SysFont("Impact", 55)
+font1 = font.SysFont("Impact", int(HEIGHT/20))
+font2 = font.SysFont("Impact", int(HEIGHT/15))
 
 sprites = sprite.Group()
 
@@ -23,7 +23,7 @@ sprites = sprite.Group()
 #mixer.music.set_volume(0.2)
 #mixer.music.play(loops=-1)
 
-#winner_sound = mixer.Sound('S31-Winning the Race.ogg')
+winner_sound = mixer.Sound('S31-Winning the Race.ogg')
 
 
 clock = time.Clock()
@@ -91,9 +91,9 @@ class Player(GameSprite):
         super().__init__(sprite_image, width, height, x, y)   
         self.points = 0
         self.speed = 5
-        self.bg_speed = 2
+        self.bg_speed = 4
         self.hp = 1
-        self.max_speed = 20
+        self.max_speed = 50
         self.mask = mask.from_surface(self.image)
         
 
@@ -107,7 +107,7 @@ class Player(GameSprite):
         if keys[K_w] and self.rect.y > 0:
             #self.rect.y -= self.speed
             if self.bg_speed < self.max_speed:
-                self.bg_speed += 0.090
+                self.bg_speed += 1
     
         if keys[K_s]:
             if self.bg_speed >0:
@@ -136,13 +136,19 @@ Enemy2()
 last_spawn_time = time.get_ticks()
 spawn_interval = randint(1500, 4000)
 
-player = Player(player_img,90,160,600,300)
-
+player = Player(player_img,90,160,WIDTH/2,HEIGHT-300)
+score_text = font2.render("SCORE", True, (0,255,0))
 finish_text = font2.render("GAME OVER", True, (255,0,0))
 points_text = font1.render(f"score:{player.points}",True, (255,255,0))
 max_points = 0
+with open("save.dat", "rb") as file:
+    max_points = pickle.load(file)
+
 hp_text = font1.render(f"Hp:{player.hp}",True, (255,255,0))
 max_points_text = font1.render(f"Max score: {max_points}", True , (255,255,255))
+def save_max_points():
+    with open("save.dat", "wb") as file:
+        pickle.dump(max_points, file)
 
 
 while True:
@@ -176,6 +182,11 @@ while True:
 
         if player.hp <= 0:
             finish = True
+            winner_sound.play()
+            score_text = font2.render(f"SCORE:{round(player.points)}", True, (0,255,0))
+            if player.points > max_points:
+                max_points = player.points
+                save_max_points()
 
         window.blit(bg, (0,bg_y1))
         window.blit(bg, (0,bg_y2))
@@ -189,9 +200,12 @@ while True:
 
        
     sprites.draw(window)
-    window.blit(points_text,(WIDTH-150,10))
+    window.blit(points_text,(40,20))
+    window.blit(max_points_text,(WIDTH-500,20))
     if finish:
         window.blit(finish_text,(WIDTH/2-100,HEIGHT/2))
+        window.blit(score_text,(WIDTH/2-150,HEIGHT/2+150))
+
 
     display.update()
     clock.tick(FPS)
