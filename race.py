@@ -130,25 +130,28 @@ class Player(GameSprite):
 
 Enemy()
 last_spawn_time = time.get_ticks()
-spawn_interval = randint(1500, 4000)
+spawn_interval = randint(3000, 5000)
 
 Enemy2()
 last_spawn_time = time.get_ticks()
-spawn_interval = randint(1500, 4000)
+spawn_interval = randint(2500, 4000)
 
 player = Player(player_img,90,160,WIDTH/2,HEIGHT-300)
 score_text = font2.render("SCORE", True, (0,255,0))
 finish_text = font2.render("GAME OVER", True, (255,0,0))
+restart_text = font2.render("PRESS R TO RESTART", True, (255,255,255))
 points_text = font1.render(f"score:{player.points}",True, (255,255,0))
 max_points = 0
 with open("save.dat", "rb") as file:
-    max_points = pickle.load(file)
+    max_points = round(pickle.load(file))
 
 hp_text = font1.render(f"Hp:{player.hp}",True, (255,255,0))
 max_points_text = font1.render(f"Max score: {max_points}", True , (255,255,255))
 def save_max_points():
     with open("save.dat", "wb") as file:
         pickle.dump(max_points, file)
+
+
 
 
 while True:
@@ -159,16 +162,25 @@ while True:
         if e.type == KEYDOWN:
             if e.key == K_ESCAPE:
                 quit()
+            if e.key == K_r and finish:
+                finish = False
+                player.hp = 1
+                player.points = 0
+
+                score_text = font2.render(f"SCORE:{round(player.points)}", True, (0,255,0))
+                for enemy in enemys:
+                    enemy.kill()
+
            
     if not finish:
         now = time.get_ticks()
         if now - last_spawn_time > spawn_interval:
             Enemy()
             last_spawn_time = time.get_ticks()
-            spawn_interval = randint(1500, 4000)
+            spawn_interval = randint(1000, 2000)
             Enemy2()
             last_spawn_time = time.get_ticks()
-            spawn_interval = randint(1500, 4000)
+            spawn_interval = randint(1000, 1100)
         sprites.update()
         player.points += player.bg_speed/100
         if player.rect.right<WIDTH/2:
@@ -201,10 +213,12 @@ while True:
        
     sprites.draw(window)
     window.blit(points_text,(40,20))
-    window.blit(max_points_text,(WIDTH-500,20))
+    window.blit(max_points_text,(40,60))
     if finish:
-        window.blit(finish_text,(WIDTH/2-100,HEIGHT/2))
-        window.blit(score_text,(WIDTH/2-150,HEIGHT/2+150))
+        window.blit(finish_text,(WIDTH/2-finish_text.get_width()/2,HEIGHT/2))
+        window.blit(score_text,(WIDTH/2-score_text.get_width()/2,HEIGHT/2+150))
+        window.blit(restart_text,(WIDTH/2-restart_text.get_width()/2,HEIGHT/2-150))
+        
 
 
     display.update()
